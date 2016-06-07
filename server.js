@@ -1,33 +1,42 @@
 'use strict';
 
 var express = require('express');
-var routes = require('./app/routes/index.js');
-var mongoose = require('mongoose');
-var passport = require('passport');
-var session = require('express-session');
+var dateFormat = require("dateformat");
 
 var app = express();
-require('dotenv').load();
-require('./app/config/passport')(passport);
 
-mongoose.connect(process.env.MONGO_URI);
+app.get('/', function (req, res) {
+    res.sendFile(process.cwd() + '/public/index.html');
+});
 
-app.use('/controllers', express.static(process.cwd() + '/app/controllers'));
-app.use('/public', express.static(process.cwd() + '/public'));
-app.use('/common', express.static(process.cwd() + '/app/common'));
+app.get('/:date', function (req, res) {
+	
+    var date = req.params.date;
+    var thisDate = new Date(date);
+    var json;
+     
+    if(thisDate.toString() == "Invalid Date") {
+    	console.log("Trying unix...");
+    	thisDate = new Date(parseInt(date));
+    }
+    	
+    if(thisDate.toString() == "Invalid Date") {
+    	
+    	json = { "unix": null, "natural": null };
+    }
+    
+    else {
+    	
+    var dateString = dateFormat(thisDate, "mmmm d, yyyy");
+    var unix = thisDate.getTime();
+    json = { "unix": unix, "natural": dateString };
+    
+    }
+    
+     res.send(json);
 
-app.use(session({
-	secret: 'secretClementine',
-	resave: false,
-	saveUninitialized: true
-}));
+});
 
-app.use(passport.initialize());
-app.use(passport.session());
-
-routes(app, passport);
-
-var port = process.env.PORT || 8080;
-app.listen(port,  function () {
-	console.log('Node.js listening on port ' + port + '...');
+app.listen(8080, function () {
+    console.log('Listening on port 8080...');
 });
